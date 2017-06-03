@@ -45,7 +45,7 @@ public OnConfigsExecuted()
 {
 	if (ReadMapList(g_MapList,
 					g_mapFileSerial,
-					"default",
+					"qmc",
 					MAPLIST_FLAG_CLEARARRAY|MAPLIST_FLAG_MAPSFOLDER)
 		!= INVALID_HANDLE)
 	{
