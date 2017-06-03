@@ -24,7 +24,7 @@ public Plugin:myinfo =
 	name        = INFO_NAME,
 	author      = "hahiserw",
 	description = INFO_DESCRIPTION,
-	version     = "1.0",
+	version     = "1.1",
 	url         = "https://github.com/hahiserw/sourcemod-qmc"
 };
 
