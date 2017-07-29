@@ -17,4 +17,10 @@
 		"#format"  "{1:d}"
 		"en"       "Found {1} matching maps:"
 	}
+
+	"No such cvar nor command:"
+	{
+		"#format"  "{1:s}"
+		"en"       "No such cvar nor command: \"{1}\""
+	}
 }

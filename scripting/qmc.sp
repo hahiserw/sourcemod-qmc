@@ -24,7 +24,7 @@ public Plugin:myinfo =
 	name        = INFO_NAME,
 	author      = "hahiserw",
 	description = INFO_DESCRIPTION,
-	version     = "1.1",
+	version     = "1.2",
 	url         = "https://github.com/hahiserw/sourcemod-qmc"
 };
 
@@ -61,13 +61,15 @@ public Action:Command_Qmc(client, args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "Usage: qmc <few_letters_of_mapname>");
+		ReplyToCommand(client, "Usage: qmc <few_letters_of_mapname> [mode]");
 
 		return Plugin_Handled;
 	}
 
 	new String:input[INPUT_LENGTH_MAX];
+	new String:mode[INPUT_LENGTH_MAX];
 	GetCmdArg(1, input, sizeof(input));
+	GetCmdArg(2, mode, sizeof(mode));
 
 	new matches = FindMatchingMaps(input);
 
@@ -87,7 +89,7 @@ public Action:Command_Qmc(client, args)
 
 	case 1:
 		{
-			ChangeToFirstMatchingMap(client);
+			ChangeToFirstMatchingMap(client, mode);
 		}
 
 	default:
@@ -121,7 +123,7 @@ public Action:Command_Qmc(client, args)
 
 				if (first_map_substring)
 				{
-					ChangeToFirstMatchingMap(client);
+					ChangeToFirstMatchingMap(client, mode);
 
 					return Plugin_Handled;
 				}
@@ -149,19 +151,96 @@ public Action:Command_Qmc(client, args)
 }
 
 
-public ChangeToFirstMatchingMap(client)
+public ChangeToFirstMatchingMap(client, const String:mode[])
 {
-			decl String:map[PLATFORM_MAX_PATH];
+	decl String:map[PLATFORM_MAX_PATH];
 
-			new index = g_mapListMatchedIndexes[0];
-			GetArrayString(g_MapList, index, map, sizeof(map));
+	new index = g_mapListMatchedIndexes[0];
+	GetArrayString(g_MapList, index, map, sizeof(map));
 
-			ShowActivity(client, "%t", "Changing map", map);
-			LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
+	if (!strlen(mode)) {
+		ShowActivity(client, "%t", "Changing map", map);
+		LogAction(client, -1, "\"%L\" changed map to \"%s\"", client, map);
 
-			new Handle:dp;
-			CreateDataTimer(3.0, Timer_ChangeMap, dp);
-			WritePackString(dp, map);
+		new Handle:dp;
+		CreateDataTimer(3.0, Timer_ChangeMap, dp);
+		WritePackString(dp, map);
+		return;
+	}
+
+	// dry run
+	if (strcmp(mode, "?", false) == 0)
+	{
+		ReplyToCommand(client, map);
+		return;
+	}
+
+	new command_length = INPUT_LENGTH_MAX + 3;
+	decl String:command[command_length];
+
+	// read aliases from a configuration file?
+	if (strcmp(mode, "vm", false) == 0)
+	{
+		strcopy(command, command_length, "sm_votemap");
+	}
+	else if (strcmp(mode, "nm", false) == 0)
+	{
+		strcopy(command, command_length, "sm_nextmap");
+	}
+
+
+	// first check if mode is a cvar since every cvar is also a command?
+
+	// cvar
+	strcopy(command, command_length, mode);
+
+	new Handle:mode_convar = FindConVar(command);
+
+	if (!mode_convar)
+	{
+		strcopy(command, command_length, "sm_");
+		StrCat(command, command_length, mode);
+
+		mode_convar = FindConVar(command);
+	}
+
+	if (mode_convar)
+	{
+		LogAction(client, -1, "\"%L\" set console variable \"%s\" to \" %s\"", client, mode, map);
+		SetConVarString(mode_convar, map);
+		return;
+	}
+
+
+	// command
+	strcopy(command, command_length, mode);
+
+	bool run_command = false;
+
+	if (CommandExists(command))
+	{
+		run_command = true;
+	}
+	else
+	{
+		strcopy(command, command_length, "sm_");
+		StrCat(command, command_length, mode);
+
+		if (CommandExists(command))
+		{
+			run_command = true;
+		}
+	}
+
+	if (run_command)
+	{
+		LogAction(client, -1, "\"%L\" called \"%s %s\"", client, command, map);
+		ServerCommand("%s %s", command, map);
+		return;
+	}
+
+
+	ReplyToCommand(client, "%t", "No such cvar nor command:", command);
 }
 
 

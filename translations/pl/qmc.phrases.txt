@@ -17,4 +17,10 @@
 		"#format"  "{1:d}"
 		"pl"       "Pasujące mapy ({1}):"
 	}
+
+	"No such cvar nor command:"
+	{
+		"#format"  "{1:s}"
+		"pl"       "Nie znaleziono takiej zmiennej konsoli (cvar) ni polecenia: \"{1}\""
+	}
 }
