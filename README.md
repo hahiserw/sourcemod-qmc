@@ -20,6 +20,22 @@ have to type the whole map name (or just set up a shortcut). If that suits you,
 then just use `!cm`. (`!cm` is a command from Public Match Server Pack from
 <http://hl2dm.net>)
 
+There's also a mode parameter you can use to see what map matches, to set cvars
+or call commands.
+
+Usage: `qmc <few_letters_of_mapname> [mode]`
+where mode might be:
+* `?` - don't change current map, just return the matching name
+* `vm`, `votemap` or `sm_votemap` - call `sm_votemap` with the matching map as
+  a first argument
+* `nm`, `nextmap` or `sm_nextmap` - set `sm_nextmap` cvar to the matching map
+* other cvars or commands
+
+There are abbreviations for `votemap` and `nextmap`, since they might be used
+a lot, `vm` and `nm` respectively. If you want to use sourcemod cvar or command
+you don't have to type the `sm_` - it will be prepended to test if there's such
+cvar or command.
+
 
 ## More info
 
