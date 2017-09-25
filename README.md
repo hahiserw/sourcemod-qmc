@@ -23,8 +23,8 @@ then just use `!cm`. (`!cm` is a command from Public Match Server Pack from
 There's also a mode parameter you can use to see what map matches, to set cvars
 or call commands.
 
-Usage: `qmc <few_letters_of_mapname> [mode]`
-Usage: `qmca <few_letters_of_mapname> [mode]`
+Usage: `qmc <few_letters_of_mapname> [mode]`<br>
+Usage: `qmca <few_letters_of_mapname> [mode]`<br>
 where qmc is for maps from mapcycyle file and qmca is for all the maps from
 maps folder, and mode might be:
 * `?` - don't change current map, just return the matching name
