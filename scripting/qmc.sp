@@ -8,13 +8,16 @@
 #define MATCHED_INDEXES_MAX 10
 
 // to not write it twice
+#define INFO_VERSION     "1.3.2"
 #define INFO_NAME        "Quick map changer"
 #define INFO_DESCRIPTION \
 	"Type a few letters of a map's name to quickly change the map"
 
 
-new Handle:g_MapList = INVALID_HANDLE;
-new g_mapFileSerial  = -1;
+new Handle:g_MapListMapCycle = INVALID_HANDLE;
+new Handle:g_MapListAll      = INVALID_HANDLE;
+new g_mapFileSerial          = -1;
+new g_mapFileSerialAll       = -1;
 
 new g_mapListMatchedIndexes[MATCHED_INDEXES_MAX];
 
@@ -24,7 +27,7 @@ public Plugin:myinfo =
 	name        = INFO_NAME,
 	author      = "hahiserw",
 	description = INFO_DESCRIPTION,
-	version     = "1.2",
+	version     = INFO_VERSION,
 	url         = "https://github.com/hahiserw/sourcemod-qmc"
 };
 
@@ -34,16 +37,24 @@ public OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("qmc.phrases");
 
-	RegAdminCmd("qmc", Command_Qmc, ADMFLAG_CHANGEMAP, INFO_DESCRIPTION);
+	CreateConVar("qmc_version", INFO_VERSION, INFO_NAME,
+				 FCVAR_NOTIFY | FCVAR_SPONLY);
 
-	g_MapList = CreateArray(ByteCountToCells(PLATFORM_MAX_PATH));
+	new String:description[100];
+	Format(description, sizeof(description), "%s  (from mapcycle)", INFO_DESCRIPTION);
+	RegAdminCmd("qmc", Command_Qmc, ADMFLAG_CHANGEMAP, description);
+	Format(description, sizeof(description), "%s  (all maps)", INFO_DESCRIPTION);
+	RegAdminCmd("qmca", Command_Qmc, ADMFLAG_CHANGEMAP, description);
+
+	g_MapListMapCycle = CreateArray(ByteCountToCells(PLATFORM_MAX_PATH));
+	g_MapListAll      = CreateArray(ByteCountToCells(PLATFORM_MAX_PATH));
 }
 
 
 // just as in mapchooser.sp
 public OnConfigsExecuted()
 {
-	if (ReadMapList(g_MapList,
+	if (ReadMapList(g_MapListMapCycle,
 					g_mapFileSerial,
 					"qmc",
 					MAPLIST_FLAG_CLEARARRAY|MAPLIST_FLAG_MAPSFOLDER)
@@ -54,6 +65,12 @@ public OnConfigsExecuted()
 			LogError("Unable to create a valid map list.");
 		}
 	}
+
+	ReadMapList(g_MapListAll,
+				g_mapFileSerialAll,
+				"qmcall",
+				MAPLIST_FLAG_CLEARARRAY | MAPLIST_FLAG_NO_DEFAULT
+				| MAPLIST_FLAG_MAPSFOLDER)
 }
 
 
@@ -62,16 +79,29 @@ public Action:Command_Qmc(client, args)
 	if (args < 1)
 	{
 		ReplyToCommand(client, "Usage: qmc <few_letters_of_mapname> [mode]");
+		ReplyToCommand(client, "Usage: qmca <few_letters_of_mapname> [mode]");
 
 		return Plugin_Handled;
 	}
 
+	new String:command[INPUT_LENGTH_MAX];
 	new String:input[INPUT_LENGTH_MAX];
 	new String:mode[INPUT_LENGTH_MAX];
+
+	GetCmdArg(0, command, sizeof(command));
 	GetCmdArg(1, input, sizeof(input));
 	GetCmdArg(2, mode, sizeof(mode));
 
-	new matches = FindMatchingMaps(input);
+	if (StrEqual(input, "!")) {
+		OnConfigsExecuted();
+		ReplyToCommand(client, "%t", "Map list reloaded", input);
+
+		return Plugin_Handled;
+	}
+
+	new Handle:mapList = StrEqual(command, "qmca")? g_MapListAll: g_MapListMapCycle;
+
+	new matches = FindMatchingMaps(mapList, input);
 
 	switch (matches)
 	{
@@ -89,7 +119,7 @@ public Action:Command_Qmc(client, args)
 
 	case 1:
 		{
-			ChangeToFirstMatchingMap(client, mode);
+			ChangeToFirstMatchingMap(mapList, client, mode);
 		}
 
 	default:
@@ -103,7 +133,7 @@ public Action:Command_Qmc(client, args)
 				new map_first_size = sizeof(map_first);
 
 				new index = g_mapListMatchedIndexes[0];
-				GetArrayString(g_MapList, index, map_first, map_first_size);
+				GetArrayString(mapList, index, map_first, map_first_size);
 
 				// see if first map's name is substring of another ones
 				// if it is, user probably wanted to change to it
@@ -112,7 +142,7 @@ public Action:Command_Qmc(client, args)
 				for (new i = 1; i < matches; i++)
 				{
 					index = g_mapListMatchedIndexes[i];
-					GetArrayString(g_MapList, index, map, sizeof(map));
+					GetArrayString(mapList, index, map, sizeof(map));
 
 					if (strncmp(map_first, map[i], map_first_size) == 0)
 					{
@@ -123,7 +153,7 @@ public Action:Command_Qmc(client, args)
 
 				if (first_map_substring)
 				{
-					ChangeToFirstMatchingMap(client, mode);
+					ChangeToFirstMatchingMap(mapList, client, mode);
 
 					return Plugin_Handled;
 				}
@@ -134,7 +164,7 @@ public Action:Command_Qmc(client, args)
 				for (new i = 0; i < matches; i++)
 				{
 					index = g_mapListMatchedIndexes[i];
-					GetArrayString(g_MapList, index, map, sizeof(map));
+					GetArrayString(mapList, index, map, sizeof(map));
 
 					ReplyToCommand(client, map);
 				}
@@ -151,12 +181,12 @@ public Action:Command_Qmc(client, args)
 }
 
 
-public ChangeToFirstMatchingMap(client, const String:mode[])
+public ChangeToFirstMatchingMap(Handle:mapList, client, const String:mode[])
 {
 	decl String:map[PLATFORM_MAX_PATH];
 
 	new index = g_mapListMatchedIndexes[0];
-	GetArrayString(g_MapList, index, map, sizeof(map));
+	GetArrayString(mapList, index, map, sizeof(map));
 
 	if (!strlen(mode)) {
 		ShowActivity(client, "%t", "Changing map", map);
@@ -244,9 +274,9 @@ public ChangeToFirstMatchingMap(client, const String:mode[])
 }
 
 
-public FindMatchingMaps(const String:input[])
+public FindMatchingMaps(Handle:mapList, const String:input[])
 {
-	new map_count = GetArraySize(g_MapList);
+	new map_count = GetArraySize(mapList);
 
 	if (!map_count)
 	{
@@ -258,7 +288,7 @@ public FindMatchingMaps(const String:input[])
 
 	for (new i = 0; i < map_count; i++)
 	{
-		GetArrayString(g_MapList, i, map, sizeof(map));
+		GetArrayString(mapList, i, map, sizeof(map));
 
 		if (FuzzyCompare(input, map))
 		{

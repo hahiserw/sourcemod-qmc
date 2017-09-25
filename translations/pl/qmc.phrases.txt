@@ -23,4 +23,9 @@
 		"#format"  "{1:s}"
 		"pl"       "Nie znaleziono takiej zmiennej konsoli (cvar) ni polecenia: \"{1}\""
 	}
+
+	"Map list reloaded"
+	{
+		"pl"       "Lista map przeładowana"
+	}
 }
