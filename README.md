@@ -24,7 +24,9 @@ There's also a mode parameter you can use to see what map matches, to set cvars
 or call commands.
 
 Usage: `qmc <few_letters_of_mapname> [mode]`
-where mode might be:
+Usage: `qmca <few_letters_of_mapname> [mode]`
+where qmc is for maps from mapcycyle file and qmca is for all the maps from
+maps folder, and mode might be:
 * `?` - don't change current map, just return the matching name
 * `vm`, `votemap` or `sm_votemap` - call `sm_votemap` with the matching map as
   a first argument
@@ -36,6 +38,9 @@ a lot, `vm` and `nm` respectively. If you want to use sourcemod cvar or command
 you don't have to type the `sm_` - it will be prepended to test if there's such
 cvar or command.
 
+There's another thing. If you changed mapcycle file and you want to get new
+maps in qmc matches (without changing the current map) just type `!qmc !`, and the
+maplist will get refreshed.
 
 ## More info
 
