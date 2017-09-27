@@ -41,9 +41,13 @@ public OnPluginStart()
 				 FCVAR_NOTIFY | FCVAR_SPONLY);
 
 	new String:description[100];
-	Format(description, sizeof(description), "%s  (from mapcycle)", INFO_DESCRIPTION);
+
+	Format(description, sizeof(description), "%s (from mapcycle)",
+		   INFO_DESCRIPTION);
 	RegAdminCmd("qmc", Command_Qmc, ADMFLAG_CHANGEMAP, description);
-	Format(description, sizeof(description), "%s  (all maps)", INFO_DESCRIPTION);
+
+	Format(description, sizeof(description), "%s (all maps)",
+		   INFO_DESCRIPTION);
 	RegAdminCmd("qmca", Command_Qmc, ADMFLAG_CHANGEMAP, description);
 
 	g_MapListMapCycle = CreateArray(ByteCountToCells(PLATFORM_MAX_PATH));
@@ -99,7 +103,8 @@ public Action:Command_Qmc(client, args)
 		return Plugin_Handled;
 	}
 
-	new Handle:mapList = StrEqual(command, "qmca")? g_MapListAll: g_MapListMapCycle;
+	new Handle:mapList = StrEqual(command, "qmca")?
+		g_MapListAll: g_MapListMapCycle;
 
 	new matches = FindMatchingMaps(mapList, input);
 

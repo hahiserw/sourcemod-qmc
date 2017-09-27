@@ -39,8 +39,8 @@ you don't have to type the `sm_` - it will be prepended to test if there's such
 cvar or command.
 
 There's another thing. If you changed mapcycle file and you want to get new
-maps in qmc matches (without changing the current map) just type `!qmc !`, and the
-maplist will get refreshed.
+maps in qmc matches (without changing the current map) just type `!qmc !`, and
+the maplist will get refreshed.
 
 ## More info
 
